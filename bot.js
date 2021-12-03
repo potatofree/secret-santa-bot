@@ -1,7 +1,7 @@
 const dotenv = require('dotenv').config()
 const uniqId = require('uniqid');
 
-const { Telegraf, Markup } = require('telegraf')
+const { Telegraf, Markup } = require('telegraf');
 
 const bot = new Telegraf(process.env.BOT_TOKEN)
 
@@ -12,15 +12,34 @@ const keyboard = Markup.inlineKeyboard([
   Markup.button.callback("No, I don't", 'invite')
 ])
 let creationProcess = false;
+let groups = [];
 var group = {
   name: 'name',
-  id: ''
+  id: '',
+  userList: [],
+  creator: '',
 };
 
 bot.start((ctx) => ctx.reply(welcomeMsg, keyboard))
-bot.action('createGroup', (ctx) => {ctx.reply('Nice! How do we name it?');
-  creationProcess = true;})
-bot.on('message', (ctx, next) => { if (creationProcess) { group.name = ctx.message.text; group.id = uniqId(); creationProcess = false; ctx.reply('Cool name!')} else {next()}});
+bot.action('createGroup', (ctx) => {
+  ctx.reply('Nice! How do we name it?');
+  creationProcess = true;
+})
+bot.on('message', (ctx, next) => { 
+  if (creationProcess) {
+    group.name = ctx.message.text; 
+    group.id = uniqId(); 
+    group.creator = ctx.chat.id;
+    group.userList.push(ctx.chat.id);
+    creationProcess = false; 
+    ctx.reply('Cool name!');
+    ctx.reply(`Group created.
+Your group ID is:
+${group.id}`);
+    return next();
+  } else {
+    return next()}});
+
 bot.hears('group', (ctx) => (ctx.reply(group)));
 
 // bot.help((ctx) => ctx.reply('Send me a sticker'))
