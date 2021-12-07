@@ -35,12 +35,16 @@ let addGroup = (group) => {
 }
 
 bot.start((ctx) => ctx.reply(welcomeMsg, keyboard))
-bot.action('createGroup', (ctx, next) => {
+
+const createGroup = (ctx, next) => {
   ctx.reply('Nice! How do we name it?');
   creationProcess = true;
   return next();
-})
-bot.on('message', (ctx, next) => {
+}
+
+bot.action('createGroup', createGroup)
+
+const onCreationMessage = (ctx, next) => {
   if (creationProcess) {
     let group = {};
     group.name = ctx.message.text;
@@ -53,21 +57,21 @@ bot.on('message', (ctx, next) => {
     ctx.reply(`Group created.
 Your group ID is:
 ${group.id}`);
+    ctx.reply(group.id);
     return next();
   } else {
     return next()
   }
-});
-bot.action('invite', (ctx) => {
+}
+const startJoiningProcess = (ctx) => {
   ctx.reply(`Sure, you can join group if you want.
 Just send me Group ID`);
   joiningProcess = true;
-})
-bot.on('message', (ctx, next) => {
+};
+const joinGroup = (ctx, next) => {
   if (joiningProcess) {
     recivedID = ctx.message.text;
     if (checkGroupID(recivedID)) {
-      console.log('In');
       addUserInGroup(recivedID, ctx.chat.id);
       ctx.reply('You in!');
       joiningProcess = false;
@@ -80,7 +84,11 @@ bot.on('message', (ctx, next) => {
   } else {
     return next()
   }
-});
+};
+
+bot.on('message', onCreationMessage);
+bot.action('invite', startJoiningProcess)
+bot.on('message', joinGroup);
 
 bot.hears('groupList', (ctx) => (ctx.reply(groups)));
 
@@ -90,3 +98,10 @@ bot.launch()
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'))
 process.once('SIGTERM', () => bot.stop('SIGTERM'))
+
+exports.createGroup = createGroup;
+exports.onCreationMessage = onCreationMessage;
+exports.checkGroupID = checkGroupID;
+exports.startJoiningProcess = startJoiningProcess;
+exports.addGroup = addGroup;
+exports.joinGroup = joinGroup;
