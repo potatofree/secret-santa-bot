@@ -14,12 +14,6 @@ const keyboard = Markup.inlineKeyboard([
 let creationProcess = false;
 let joiningProcess = false;
 let groups = [];
-var group = {
-  name: 'name',
-  id: '',
-  userList: [],
-  creator: '',
-};
 let checkGroupID = (ID) => {
   let check = false;
   groups.forEach((group) => {
@@ -36,21 +30,25 @@ let addUserInGroup = (ID, userID) => {
   let i = groups.findIndex(check);
   groups[i].userList.push(userID);
 }
-
+let addGroup = (group) => {
+  groups.push(group);
+}
 
 bot.start((ctx) => ctx.reply(welcomeMsg, keyboard))
-bot.action('createGroup', (ctx) => {
+bot.action('createGroup', (ctx, next) => {
   ctx.reply('Nice! How do we name it?');
   creationProcess = true;
+  return next();
 })
 bot.on('message', (ctx, next) => {
   if (creationProcess) {
+    let group = {};
     group.name = ctx.message.text;
     group.id = uniqId();
     group.creator = ctx.chat.id;
-    group.userList.push(ctx.chat.id);
+    group.userList= [ctx.chat.id];
     creationProcess = false;
-    groups.push(group);
+    addGroup(group);
     ctx.reply('Cool name!');
     ctx.reply(`Group created.
 Your group ID is:
@@ -72,28 +70,21 @@ bot.on('message', (ctx, next) => {
       console.log('In');
       addUserInGroup(recivedID, ctx.chat.id);
       ctx.reply('You in!');
+      joiningProcess = false;
       return next();
     } else {
       ctx.reply('I know nothing about group with that ID. =(');
+      joiningProcess = false;
       return next();
     }
   } else {
     return next()
   }
 });
-// bot.command('join', (ctx, next) => {
-//   ctx.reply(ctx.message.text);
-// })
 
-bot.hears('group', (ctx) => (ctx.reply(group)));
 bot.hears('groupList', (ctx) => (ctx.reply(groups)));
 
 
-// bot.help((ctx) => ctx.reply('Send me a sticker'))
-// bot.on('sticker', (ctx) => ctx.reply('👍'))
-
-// bot.hears('hi', (ctx) => ctx.reply('Hey there'))
-// bot.hears('message', (ctx) => ctx.reply(ctx.message.chat.id))
 bot.launch()
 
 // Enable graceful stop
