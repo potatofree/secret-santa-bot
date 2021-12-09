@@ -8,13 +8,14 @@ const bot = new Telegraf(process.env.BOT_TOKEN)
 const welcomeMsg = `Hi! I'm Secret Santa bot. 
 Do you want to create a new Group for you and your friends?`;
 const keyboard = Markup.inlineKeyboard([
-  Markup.button.callback('Create Group', 'createGroup'),
-  Markup.button.callback('Join Group', 'invite')
+  Markup.button.callback('Create Group', 'startCreationProcess'),
+  Markup.button.callback('Join Group', 'startJoiningProcess')
 ]);
 let creationProcess = false;
 let joiningProcess = false;
 let groups = [];
-let checkGroupID = (ID) => {
+
+const checkGroupID = (ID) => {
   let check = false;
   groups.forEach((group) => {
     if (group.id == ID) {
@@ -23,28 +24,25 @@ let checkGroupID = (ID) => {
   })
   return check;
 }
-let addUserInGroup = (ID, userID) => {
+
+const addUserInGroup = (ID, userID) => {
   let check = (group) => {
     return group.id == ID;
   }
   let i = groups.findIndex(check);
   groups[i].userList.push(userID);
 }
-let addGroup = (group) => {
+const addGroup = (group) => {
   groups.push(group);
 }
 
-bot.start((ctx) => ctx.reply(welcomeMsg, keyboard))
-
-const createGroup = (ctx, next) => {
+const startCreationProcess = (ctx, next) => {
   ctx.reply('Nice! How do we name it?');
   creationProcess = true;
   return next();
 }
 
-bot.action('createGroup', createGroup)
-
-const onCreationMessage = (ctx, next) => {
+const createGroup = (ctx, next) => {
   if (creationProcess) {
     let group = {};
     group.name = ctx.message.text;
@@ -68,6 +66,7 @@ const startJoiningProcess = (ctx) => {
 Just send me Group ID`);
   joiningProcess = true;
 };
+
 const joinGroup = (ctx, next) => {
   if (joiningProcess) {
     recivedID = ctx.message.text;
@@ -86,8 +85,12 @@ const joinGroup = (ctx, next) => {
   }
 };
 
-bot.on('message', onCreationMessage);
-bot.action('invite', startJoiningProcess)
+bot.start((ctx) => ctx.reply(welcomeMsg, keyboard))
+
+bot.action('startCreationProcess', startCreationProcess)
+bot.on('message', createGroup);
+
+bot.action('startJoiningProcess', startJoiningProcess)
 bot.on('message', joinGroup);
 
 bot.hears('groupList', (ctx) => (ctx.reply(groups)));
@@ -99,8 +102,9 @@ bot.launch()
 process.once('SIGINT', () => bot.stop('SIGINT'))
 process.once('SIGTERM', () => bot.stop('SIGTERM'))
 
+// exports for tests
+exports.startCreationProcess = startCreationProcess;
 exports.createGroup = createGroup;
-exports.onCreationMessage = onCreationMessage;
 exports.checkGroupID = checkGroupID;
 exports.startJoiningProcess = startJoiningProcess;
 exports.addGroup = addGroup;

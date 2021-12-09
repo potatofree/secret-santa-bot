@@ -1,7 +1,7 @@
 const test = require('ava');
 const { group } = require('console');
 
-const {createGroup, onCreationMessage, checkGroupID, startJoiningProcess, addGroup, joinGroup} = require('../bot')
+const {createGroup, startCreationProcess, checkGroupID, startJoiningProcess, addGroup, joinGroup} = require('../bot')
 
 test.cb('should pass', (t) => {
   t.is(1, 1);
@@ -27,11 +27,11 @@ const text = (msg) => {
 test.cb('should prompt for a name', (t) => {
     ctx = context()
 
-    createGroup(ctx, () => {
+    startCreationProcess(ctx, () => {
         t.is(ctx.replies[0], 'Nice! How do we name it?')
         
         ctx.message = text('Me myself and I')
-        onCreationMessage(ctx, () => {
+        createGroup(ctx, () => {
 
             groupId = ctx.replies[0];
             t.true(checkGroupID(groupId), `${groupId} not found`);
@@ -44,11 +44,11 @@ test.cb('should prompt for a name', (t) => {
 test.cb('should add the second group', (t) => {
     ctx = context()
 
-    createGroup(ctx, () => {
+    startCreationProcess(ctx, () => {
         t.is(ctx.replies[0], 'Nice! How do we name it?')
         
         ctx.message = text('Me myself and I')
-        onCreationMessage(ctx, () => {
+        createGroup(ctx, () => {
 
             groupId = ctx.replies[0];
             t.true(checkGroupID(groupId), `${groupId} not found`);
