@@ -7,7 +7,7 @@
 	},
 	"dependencies": {
 		"dotenv": "^10.0.0",
-		"telegraf": "^4.4.2",
+		"grammy": "^1.5.2",
 		"uniqid": "^5.4.0"
 	}
 }

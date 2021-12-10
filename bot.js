@@ -1,16 +1,17 @@
 const dotenv = require('dotenv').config()
 const uniqId = require('uniqid');
 
-const { Telegraf, Markup } = require('telegraf');
+const { Bot, InlineKeyboard } = require('grammy');
+const { getPriority } = require('os');
 
-const bot = new Telegraf(process.env.BOT_TOKEN)
+const bot = new Bot(process.env.BOT_TOKEN)
 
 const welcomeMsg = `Hi! I'm Secret Santa bot. 
 Do you want to create a new Group for you and your friends?`;
-const keyboard = Markup.inlineKeyboard([
-  Markup.button.callback('Create Group', 'startCreationProcess'),
-  Markup.button.callback('Join Group', 'startJoiningProcess')
-]);
+const keyboard =new InlineKeyboard()
+  .text('Create Group', 'startCreationProcess')
+  .text('Join Group', 'startJoiningProcess')
+
 let creationProcess = false;
 let joiningProcess = false;
 let groups = [];
@@ -33,6 +34,7 @@ const addUserInGroup = (ID, userID) => {
   groups[i].userList.push(userID);
 }
 const addGroup = (group) => {
+  group.status = 'Open';
   groups.push(group);
 }
 
@@ -85,18 +87,39 @@ const joinGroup = (ctx, next) => {
   }
 };
 
-bot.start((ctx) => ctx.reply(welcomeMsg, keyboard))
+bot.command('start', async (ctx) => await ctx.reply(welcomeMsg,  { reply_markup: keyboard }))
 
-bot.action('startCreationProcess', startCreationProcess)
+bot.callbackQuery('startCreationProcess', startCreationProcess)
 bot.on('message', createGroup);
 
-bot.action('startJoiningProcess', startJoiningProcess)
+bot.callbackQuery('startJoiningProcess', startJoiningProcess)
 bot.on('message', joinGroup);
 
+const getUserGroupList = (id) => {
+  let list = [];
+  groups.forEach( (group) => { 
+    if(group.userList.includes(id)) {
+      list.push(group);
+    }
+  })
+  return list;
+}
+const startEvent = (ctx) => {
+  let groupList = getUserGroupList(ctx.chat.id);
+  let groupNamesList = [];
+  groupList.forEach( (group) => {
+    let s = `${group.name} (${group.id})`;
+    groupNamesList.push(s);
+  })
+  ctx.reply(groupNamesList);
+}
+bot.command('startevent', startEvent); 
+
+//  
 bot.hears('groupList', (ctx) => (ctx.reply(groups)));
 
 
-bot.launch()
+bot.start()
 
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'))

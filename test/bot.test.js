@@ -1,5 +1,4 @@
 const test = require('ava');
-const { group } = require('console');
 
 const {createGroup, startCreationProcess, checkGroupID, startJoiningProcess, addGroup, joinGroup} = require('../bot')
 
