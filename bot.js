@@ -2,7 +2,6 @@ const dotenv = require('dotenv').config()
 const uniqId = require('uniqid');
 
 const { Bot, InlineKeyboard } = require('grammy');
-const { getPriority } = require('os');
 
 const bot = new Bot(process.env.BOT_TOKEN)
 
@@ -38,13 +37,13 @@ const addGroup = (group) => {
   groups.push(group);
 }
 
-const startCreationProcess = (ctx, next) => {
-  ctx.reply('Nice! How do we name it?');
+const startCreationProcess = async (ctx, next) => {
+  await ctx.reply('Nice! How do we name it?');
   creationProcess = true;
   return next();
 }
 
-const createGroup = (ctx, next) => {
+const createGroup = async (ctx, next) => {
   if (creationProcess) {
     let group = {};
     group.name = ctx.message.text;
@@ -53,8 +52,8 @@ const createGroup = (ctx, next) => {
     group.userList= [ctx.chat.id];
     creationProcess = false;
     addGroup(group);
-    ctx.reply('Cool name!');
-    ctx.reply(`Group created.
+    await ctx.reply('Cool name!');
+    await ctx.reply(`Group created.
 Your group ID is:
 ${group.id}`);
     ctx.reply(group.id);
@@ -104,14 +103,32 @@ const getUserGroupList = (id) => {
   })
   return list;
 }
-const startEvent = (ctx) => {
+
+const startEvent = (ctx, next) => {
   let groupList = getUserGroupList(ctx.chat.id);
   let groupNamesList = [];
   groupList.forEach( (group) => {
-    let s = `${group.name} (${group.id})`;
+    let s = `${group.name} (${group.id}) ${group.status}`;
     groupNamesList.push(s);
   })
-  ctx.reply(groupNamesList);
+  if (!groupNamesList.length) {
+    ctx.reply(`You haven't joined any group. Try the /start for begining.`);
+    return next();
+  } else if (groupNamesList.length == 1) {
+    startEventConfirmation(groupList[0]);
+    return next();
+  } else {
+  let s = 'Your groups: \n';
+  groupNamesList.forEach( (group, i) => {
+    s += `${i+1}: ${group} \n`
+  });
+  ctx.reply(s);
+  ctx.reply(`Which group do you want to start? (1-${groupNamesList.length})`);
+
+  return next();
+  };
+  // ctx.reply()
+
 }
 bot.command('startevent', startEvent); 
 
